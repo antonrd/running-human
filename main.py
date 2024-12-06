@@ -103,7 +103,18 @@ class GameState:
     game_running: bool = True
     is_game_over: bool = False
 
+    # Specifies how the background should change when the human collects crystals
+    background_colors: list[tuple[int, int, int]] = field(default_factory=lambda: [(0, 0, 0), (30, 30, 30)])
+    obstacle_colors: list[tuple[int, int, int]] = field(default_factory=lambda: [(211, 51, 68), (26, 246, 66)])
+    crystal_colors: list[tuple[int, int, int]] = field(default_factory=lambda: [(151, 57, 240), (246, 26, 96)])
+    crystal_change_background: int = 50
+
+    def color_variant(self):
+        return (self.human_crystals // self.crystal_change_background) % 2
+
+    # Holds the incoming objects
     objects: list = field(default_factory=list)
+    # Holds the items in the menu to be displayed
     menu_items: list = field(default_factory=lambda: [MenuItem.NEW_GAME, MenuItem.EXIT])
 
     def __post_init__(self):
@@ -177,7 +188,7 @@ def can_add_new_object(curr_objects: list[FlyingObject], new_obj_type: ObjectTyp
 
 
 def draw_crystal(center_x: int, center_y: int, width: int, height: int):
-    rhombus_color = 'purple'
+    rhombus_color = state.crystal_colors[state.color_variant()]
     vertices = [
         (center_x, center_y - height // 2),  # Top vertex
         (center_x + width // 2, center_y),   # Right vertex
@@ -281,7 +292,8 @@ def rect_circle_collision(rect_x, rect_y, rect_w, rect_h, circle_x, circle_y, ci
     distance = (closest_x - circle_x) ** 2 + (closest_y - circle_y) ** 2
 
     # Check if the distance is less than or equal to the circle's radius
-    return distance <= circle_r ** 2
+    # Add some slack in order to not count border touches
+    return distance <= (circle_r - 2) ** 2
 
 
 def object_collides_with_human(obj: FlyingObject, state: GameState) -> bool:
@@ -362,6 +374,9 @@ def draw_menu_screen(screen: pygame.Surface, state: GameState):
 
 
 def draw_game_objects(screen: pygame.Surface, state: GameState):
+
+    background_color = state.background_colors[state.color_variant()]
+
     screen.fill(background_color)  # Fill the display with a solid color
 
     # Write number of lives
@@ -380,7 +395,7 @@ def draw_game_objects(screen: pygame.Surface, state: GameState):
     color = 'yellow' if not state.is_hit else 'red'
     square_rect = pygame.Rect(state.human_x, state.human_y, state.human_w, state.human_h)  # x, y, width, height
     pygame.draw.rect(screen, color, square_rect)
-    circle_color = 'red'
+    circle_color = state.obstacle_colors[state.color_variant()]
     for obj in state.objects:
         if obj.left_side() >= settings.arena_left_x() and obj.right_side() <= settings.arena_right_x():
             if obj.obj_type == ObjectType.RED_BALL:
@@ -397,9 +412,6 @@ while state.game_running:
             continue
         else:
             state.is_hit = False
-
-    # Process player inputs.
-    background_color = 'black'
 
     if state.game_mode in [GameMode.MENU, GameMode.PAUSE]:
         # Check for pressed buttons.
