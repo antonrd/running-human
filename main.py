@@ -3,6 +3,8 @@ from enum import Enum
 import pygame
 import random
 
+import sprite_utils
+
 pygame.init()
 
 @dataclass
@@ -51,9 +53,21 @@ class GameState:
     human_x: int = field(init=False)
     human_y: int = field(init=False)
 
+    human_curr_sprite_idx: int = 0
+    human_sprites: list = field(init=False)
+
+    # The human sprite will change each 3 frames.
+    def get_current_human_sprite(self):
+        if self.human_sprites:
+            return self.human_sprites[self.human_curr_sprite_idx // 3]
+
+    def move_next_human_sprite(self):
+        if self.human_sprites:
+            self.human_curr_sprite_idx = (self.human_curr_sprite_idx + 1) % (3 * len(self.human_sprites))
+
     # Jump settings
     jump_h: int = 300
-    jump_step: int = 15
+    jump_step: int = 30
 
     obstacle_ratio: int = 4
     crystal_ratio: int = 1
@@ -73,12 +87,11 @@ class GameState:
     # Flying object sizes
     obstacle_r: int = 20
     obstacle_y: int = field(init=False)
-
-    obstacle_step: int = 10
+    obstacle_step: int = 15
 
     crystal_w: int = 40
     crystal_h: int = 60
-    crystal_step: int = 10
+    crystal_step: int = 15
     crystal_high_y: int = field(init=False)
 
     in_jump: bool = False
@@ -134,6 +147,7 @@ class GameState:
         self.human_crystals = 0
         self.is_game_over = False
         self.human_y = self.game_settings.arena_lower_y() - self.human_h
+        self.human_sprites = sprite_utils.load_walk_right_sprite(output_w=self.human_w, output_h=self.human_h)
 
 
 settings = GameSettings()
@@ -293,7 +307,7 @@ def rect_circle_collision(rect_x, rect_y, rect_w, rect_h, circle_x, circle_y, ci
 
     # Check if the distance is less than or equal to the circle's radius
     # Add some slack in order to not count border touches
-    return distance <= (circle_r - 2) ** 2
+    return distance <= (circle_r - 5) ** 2
 
 
 def object_collides_with_human(obj: FlyingObject, state: GameState) -> bool:
@@ -313,6 +327,10 @@ def object_collides_with_human(obj: FlyingObject, state: GameState) -> bool:
 
 
 def move_game_objects(state: GameState):
+    # Indicate that the human sprite should move one index up and
+    # potentially to change to a new image.
+    state.move_next_human_sprite()
+
     for obj in state.objects:
         if obj.obj_type == ObjectType.RED_BALL:
             obj.x -= state.obstacle_step
@@ -376,25 +394,30 @@ def draw_menu_screen(screen: pygame.Surface, state: GameState):
 def draw_game_objects(screen: pygame.Surface, state: GameState):
 
     background_color = state.background_colors[state.color_variant()]
-
-    screen.fill(background_color)  # Fill the display with a solid color
+    screen.fill(background_color)
 
     # Write number of lives
     font = pygame.font.Font(None, 36)  # None uses the default font.
     text = font.render(f'Lives: {state.human_lives}, Crystals: {state.human_crystals}', True, (255, 255, 255))  # Text, antialias, color
     screen.blit(text, (10, 10))  # Position at x=10, y=10
 
+    # Draw the game field bounds
     pygame.draw.rect(screen,
-                        settings.border_color,
+                        settings.border_color if not state.is_hit else 'red',
                         pygame.Rect(
                             settings.screen_border,
                             settings.screen_border,
                             settings.screen_w - 2 * settings.screen_border,
                             settings.screen_h - 2 * settings.screen_border),
                         settings.border_w)
-    color = 'yellow' if not state.is_hit else 'red'
-    square_rect = pygame.Rect(state.human_x, state.human_y, state.human_w, state.human_h)  # x, y, width, height
-    pygame.draw.rect(screen, color, square_rect)
+
+    curr_human_sprite = state.get_current_human_sprite()
+    if curr_human_sprite:
+        screen.blit(curr_human_sprite, (state.human_x, state.human_y))
+    else:
+        color = 'yellow' if not state.is_hit else 'red'
+        square_rect = pygame.Rect(state.human_x, state.human_y, state.human_w, state.human_h)  # x, y, width, height
+        pygame.draw.rect(screen, color, square_rect)
     circle_color = state.obstacle_colors[state.color_variant()]
     for obj in state.objects:
         if obj.left_side() >= settings.arena_left_x() and obj.right_side() <= settings.arena_right_x():
@@ -437,6 +460,6 @@ while state.game_running:
         state.is_game_over = True
 
     pygame.display.flip()  # Refresh on-screen display
-    clock.tick(60)         # wait until next frame (at 60 FPS)
+    clock.tick(30)
 
 pygame.quit()
