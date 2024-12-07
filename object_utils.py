@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum
-import pygame
 import random
 
 import game_data
@@ -50,22 +49,6 @@ def can_add_new_object(state: game_data.GameState, new_obj_type: ObjectType) -> 
                 state.game_settings.arena_right_x() - state.min_crystal_dist)
 
 
-def draw_crystal(screen: pygame.Surface,
-                 state: game_data.GameState,
-                 center_x: int,
-                 center_y: int,
-                 width: int,
-                 height: int):
-    rhombus_color = state.crystal_colors[state.color_variant()]
-    vertices = [
-        (center_x, center_y - height // 2),  # Top vertex
-        (center_x + width // 2, center_y),   # Right vertex
-        (center_x, center_y + height // 2),  # Bottom vertex
-        (center_x - width // 2, center_y)    # Left vertex
-    ]
-    pygame.draw.polygon(screen, rhombus_color, vertices)
-
-
 def rect_circle_collision(rect_x, rect_y, rect_w, rect_h, circle_x, circle_y, circle_r):
     # Find the closest point on the rectangle to the circle center
     closest_x = max(rect_x, min(circle_x, rect_x + rect_w))
@@ -76,7 +59,7 @@ def rect_circle_collision(rect_x, rect_y, rect_w, rect_h, circle_x, circle_y, ci
 
     # Check if the distance is less than or equal to the circle's radius
     # Add some slack in order to not count border touches
-    return distance <= (circle_r - 5) ** 2
+    return distance <= (circle_r - 8) ** 2
 
 
 def object_collides_with_human(obj: FlyingObject, state: game_data.GameState) -> bool:
@@ -154,40 +137,3 @@ def add_game_objects(state: game_data.GameState):
 
     while state.objects and state.objects[0].right_side() < 0:
         state.objects.pop(0)
-
-
-def draw_game_objects(screen: pygame.Surface, state: game_data.GameState):
-
-    background_color = state.background_colors[state.color_variant()]
-    screen.fill(background_color)
-
-    # Write number of lives
-    font = pygame.font.Font(None, 36)  # None uses the default font.
-    text = font.render(f'Lives: {state.human_lives}, Crystals: {state.human_crystals}', True, (255, 255, 255))  # Text, antialias, color
-    screen.blit(text, (10, 10))  # Position at x=10, y=10
-
-    # Draw the game field bounds
-    pygame.draw.rect(screen,
-                     state.game_settings.border_color if not state.is_hit else 'red',
-                     pygame.Rect(
-                         state.game_settings.screen_border,
-                         state.game_settings.screen_border,
-                         state.game_settings.screen_w - 2 * state.game_settings.screen_border,
-                         state.game_settings.screen_h - 2 * state.game_settings.screen_border),
-                     state.game_settings.border_w)
-
-    curr_human_sprite = state.get_current_human_sprite()
-    if curr_human_sprite:
-        screen.blit(curr_human_sprite, (state.human_x, state.human_y))
-    else:
-        color = 'yellow' if not state.is_hit else 'red'
-        square_rect = pygame.Rect(state.human_x, state.human_y, state.human_w, state.human_h)  # x, y, width, height
-        pygame.draw.rect(screen, color, square_rect)
-    circle_color = state.obstacle_colors[state.color_variant()]
-    for obj in state.objects:
-        if (obj.left_side() >= state.game_settings.arena_left_x() and
-            obj.right_side() <= state.game_settings.arena_right_x()):
-            if obj.obj_type == ObjectType.RED_BALL:
-                pygame.draw.circle(screen, circle_color, (obj.x, obj.y), obj.w // 2)
-            elif not obj.has_hit:
-                draw_crystal(screen, state, obj.x, obj.y, obj.w, obj.h)
