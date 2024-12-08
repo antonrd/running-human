@@ -21,6 +21,16 @@ def draw_crystal(screen: pygame.Surface,
     pygame.draw.polygon(screen, rhombus_color, vertices)
 
 
+def draw_obstacle(screen: pygame.Surface,
+                  state: game_data.GameState,
+                  obj: object_utils.FlyingObject):
+    if state.fire_frame:
+        screen.blit(state.fire_frame, (obj.x, obj.y))
+    else:
+        circle_color = state.obstacle_colors[state.color_variant()]
+        pygame.draw.circle(screen, circle_color, (obj.x, obj.y), obj.w // 2)
+
+
 def draw_game_objects(screen: pygame.Surface, state: game_data.GameState):
 
     background_color = state.background_colors[state.color_variant()]
@@ -48,12 +58,11 @@ def draw_game_objects(screen: pygame.Surface, state: game_data.GameState):
         color = 'yellow' if not state.is_hit else 'red'
         square_rect = pygame.Rect(state.human_x, state.human_y, state.human_w, state.human_h)  # x, y, width, height
         pygame.draw.rect(screen, color, square_rect)
-    circle_color = state.obstacle_colors[state.color_variant()]
     for obj in state.objects:
         if (obj.left_side() >= state.game_settings.arena_left_x() and
             obj.right_side() <= state.game_settings.arena_right_x()):
             if obj.obj_type == object_utils.ObjectType.RED_BALL:
-                pygame.draw.circle(screen, circle_color, (obj.x, obj.y), obj.w // 2)
+                draw_obstacle(screen, state, obj)
             elif not obj.has_hit:
                 draw_crystal(screen, state, obj.x, obj.y, obj.w, obj.h)
 

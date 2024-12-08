@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
+import pygame
 
 import sprite_utils
 
@@ -41,9 +42,12 @@ class MenuItem(Enum):
 @dataclass
 class GameState:
     game_settings: GameSettings = field(default_factory=lambda: GameSettings())
-    # Position on screen where the human is.
-    human_w: int = 100
+    # The game will consider the human a bit thinner than it is
+    # because the loaded sprites are a bit emptier on the right side.
+    human_w: int = 70
     human_h: int = 100
+    human_image_w: int = 100
+    human_image_h: int = 100
     human_x_in_arena: int = 300
 
     human_x: int = field(init=False)
@@ -83,6 +87,9 @@ class GameState:
     obstacle_r: int = 20
     obstacle_y: int = field(init=False)
     obstacle_step: int = 15
+
+    # Loaded image of fire, used to represent an obstacle.
+    fire_frame: pygame.Surface = field(init=False)
 
     crystal_w: int = 40
     crystal_h: int = 60
@@ -128,8 +135,20 @@ class GameState:
     def __post_init__(self):
         self.human_x = self.human_x_in_arena + self.game_settings.screen_border
         self.human_y = self.game_settings.arena_lower_y() - self.human_h
-        self.obstacle_y = self.game_settings.arena_lower_y() - self.obstacle_r
         self.crystal_high_y = self.game_settings.arena_lower_y() - self.jump_h
+
+        self.fire_frame = sprite_utils.load_fire_frame(self.obstacle_r * 2, self.obstacle_r * 2)
+        # If the fire frame was loaded specify a 'y' position that it higher on the screen
+        # because the image position is for the upper left corner.
+        # Otherwise, to draw circles we will need the coordinates of the circle center.
+        if self.fire_frame:
+            self.obstacle_y = self.game_settings.arena_lower_y() - 2 * self.obstacle_r
+        else:
+            self.obstacle_y = self.game_settings.arena_lower_y() - self.obstacle_r
+        self.human_sprites = sprite_utils.load_walk_right_sprite(
+            output_w=self.human_image_w,
+            output_h=self.human_image_h
+            )
 
     def reset(self):
         self.game_mode = GameMode.PLAY
@@ -142,4 +161,3 @@ class GameState:
         self.human_crystals = 0
         self.is_game_over = False
         self.human_y = self.game_settings.arena_lower_y() - self.human_h
-        self.human_sprites = sprite_utils.load_walk_right_sprite(output_w=self.human_w, output_h=self.human_h)
