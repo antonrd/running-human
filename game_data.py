@@ -44,7 +44,7 @@ class GameState:
     game_settings: GameSettings = field(default_factory=lambda: GameSettings())
     # The game will consider the human a bit thinner than it is
     # because the loaded sprites are a bit emptier on the right side.
-    human_w: int = 70
+    human_w: int = 90
     human_h: int = 100
     human_image_w: int = 100
     human_image_h: int = 100
@@ -90,6 +90,12 @@ class GameState:
 
     # Loaded image of fire, used to represent an obstacle.
     fire_frame: pygame.Surface = field(init=False)
+    # Loaded image of a heart to be used when displaying the remaining lives.
+    heart_frame: pygame.Surface = field(init=False)
+    # Images for the crystals that appear at the top near the score and for
+    # the ones that show up in the game.
+    crystal_frame: pygame.Surface = field(init=False)
+    small_crystal_frame: pygame.Surface = field(init=False)
 
     crystal_w: int = 40
     crystal_h: int = 60
@@ -137,14 +143,16 @@ class GameState:
         self.human_y = self.game_settings.arena_lower_y() - self.human_h
         self.crystal_high_y = self.game_settings.arena_lower_y() - self.jump_h
 
-        self.fire_frame = sprite_utils.load_fire_frame(self.obstacle_r * 2, self.obstacle_r * 2)
-        # If the fire frame was loaded specify a 'y' position that it higher on the screen
-        # because the image position is for the upper left corner.
-        # Otherwise, to draw circles we will need the coordinates of the circle center.
-        if self.fire_frame:
-            self.obstacle_y = self.game_settings.arena_lower_y() - 2 * self.obstacle_r
-        else:
-            self.obstacle_y = self.game_settings.arena_lower_y() - self.obstacle_r
+        self.fire_frame = sprite_utils.load_frame('./assets/fire_pixel_art_40x40.png',
+                                                  self.obstacle_r * 2,
+                                                  self.obstacle_r * 2)
+
+        self.heart_frame = sprite_utils.load_frame('./assets/life_heart_32x32.png')
+        self.crystal_frame = sprite_utils.load_frame('./assets/purple_rhombus_40x60.png')
+        self.small_crystal_frame = sprite_utils.load_frame('./assets/purple_rhombus_40x60.png', output_w=22, output_h=32)
+
+        self.obstacle_y = self.game_settings.arena_lower_y() - self.obstacle_r
+
         self.human_sprites = sprite_utils.load_walk_right_sprite(
             output_w=self.human_image_w,
             output_h=self.human_image_h

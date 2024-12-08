@@ -7,10 +7,6 @@ def load_walk_right_sprite(output_w: int = None, output_h: int = None) -> list:
         print(f'Could not load human walking sprite: {e}')
         return []
 
-    # sprite_sheet_width, sprite_sheet_height = sprite_sheet.get_size()
-
-    # print(sprite_sheet_width, sprite_sheet_height)
-
     frame_width = 18
     frame_height = 16
     num_frames = 4
@@ -25,14 +21,14 @@ def load_walk_right_sprite(output_w: int = None, output_h: int = None) -> list:
 
     return frames
 
-def load_fire_frame(output_w: int = None, output_h: int = None) -> pygame.Surface:
+def load_frame(image_path: str, output_w: int = None, output_h: int = None) -> pygame.Surface:
     try:
-        fire_frame = pygame.image.load('./assets/fire_pixel_art_40x40.png')
+        loaded_frame = pygame.image.load(image_path)
     except FileNotFoundError as e:
-        print(f'Could not load fire 40x40 image: {e}')
+        print(f'Could not load frame: {e}')
         return None
 
     if output_w and output_h:
-        fire_frame = pygame.transform.scale(fire_frame, (output_w, output_h))
+        loaded_frame = pygame.transform.scale(loaded_frame, (output_w, output_h))
 
-    return fire_frame
+    return loaded_frame

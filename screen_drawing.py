@@ -11,21 +11,24 @@ def draw_crystal(screen: pygame.Surface,
                  center_y: int,
                  width: int,
                  height: int):
-    rhombus_color = state.crystal_colors[state.color_variant()]
-    vertices = [
-        (center_x, center_y - height // 2),  # Top vertex
-        (center_x + width // 2, center_y),   # Right vertex
-        (center_x, center_y + height // 2),  # Bottom vertex
-        (center_x - width // 2, center_y)    # Left vertex
-    ]
-    pygame.draw.polygon(screen, rhombus_color, vertices)
+    if state.crystal_frame:
+        screen.blit(state.crystal_frame, (center_x - width // 2, center_y - height // 2))
+    else:
+        rhombus_color = state.crystal_colors[state.color_variant()]
+        vertices = [
+            (center_x, center_y - height // 2),  # Top vertex
+            (center_x + width // 2, center_y),   # Right vertex
+            (center_x, center_y + height // 2),  # Bottom vertex
+            (center_x - width // 2, center_y)    # Left vertex
+        ]
+        pygame.draw.polygon(screen, rhombus_color, vertices)
 
 
 def draw_obstacle(screen: pygame.Surface,
                   state: game_data.GameState,
                   obj: object_utils.FlyingObject):
     if state.fire_frame:
-        screen.blit(state.fire_frame, (obj.x, obj.y))
+        screen.blit(state.fire_frame, (obj.x - obj.w // 2, obj.y - obj.h // 2))
     else:
         circle_color = state.obstacle_colors[state.color_variant()]
         pygame.draw.circle(screen, circle_color, (obj.x, obj.y), obj.w // 2)
@@ -38,8 +41,13 @@ def draw_game_objects(screen: pygame.Surface, state: game_data.GameState):
 
     # Write number of lives
     font = pygame.font.Font(None, 36)  # None uses the default font.
-    text = font.render(f'Lives: {state.human_lives}, Crystals: {state.human_crystals}', True, (255, 255, 255))  # Text, antialias, color
-    screen.blit(text, (10, 10))  # Position at x=10, y=10
+    heart_rect = screen.blit(state.heart_frame, (60, 8))
+    text_lives = font.render(f'{state.human_lives}', True, (255, 255, 255))
+    lives_rect = screen.blit(text_lives, (heart_rect.right + 10, 10))
+
+    crystal_rect = screen.blit(state.small_crystal_frame, (lives_rect.right + 20, 8))
+    text_crystals = font.render(f'{state.human_crystals}', True, (255, 255, 255))
+    screen.blit(text_crystals, (crystal_rect.right + 10, 10))
 
     # Draw the game field bounds
     pygame.draw.rect(screen,

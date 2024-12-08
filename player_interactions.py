@@ -54,18 +54,3 @@ def handle_play_interactions(state: game_data.GameState):
             if event.key == pygame.K_p:
                 state.game_mode = game_data.GameMode.PAUSE
                 state.curr_menu_item_idx = 0
-    if state.in_jump:
-        if state.jump_dir == game_data.JumpDir.UP:
-            # If the jump is at its highest point, start going down.
-            if (state.human_y <=
-                state.game_settings.arena_lower_y() - state.human_h - state.jump_h):
-                state.jump_dir = game_data.JumpDir.DOWN
-                state.human_y += state.jump_step
-            else:
-                state.human_y -= state.jump_step
-        else:
-            if state.human_y == state.game_settings.arena_lower_y() - state.human_h:
-                state.in_jump = False
-                state.jump_dir = game_data.JumpDir.NONE
-            else:
-                state.human_y += state.jump_step

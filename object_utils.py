@@ -81,6 +81,22 @@ def object_collides_with_human(obj: FlyingObject, state: game_data.GameState) ->
 
 
 def move_game_objects(state: game_data.GameState):
+    if state.in_jump:
+        if state.jump_dir == game_data.JumpDir.UP:
+            # If the jump is at its highest point, start going down.
+            if (state.human_y <=
+                state.game_settings.arena_lower_y() - state.human_h - state.jump_h):
+                state.jump_dir = game_data.JumpDir.DOWN
+                state.human_y += state.jump_step
+            else:
+                state.human_y -= state.jump_step
+        else:
+            if state.human_y == state.game_settings.arena_lower_y() - state.human_h:
+                state.in_jump = False
+                state.jump_dir = game_data.JumpDir.NONE
+            else:
+                state.human_y += state.jump_step
+
     # Indicate that the human sprite should move one index up and
     # potentially to change to a new image.
     state.move_next_human_sprite()
